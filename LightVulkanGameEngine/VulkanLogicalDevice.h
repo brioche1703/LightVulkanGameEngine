@@ -2,6 +2,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
 #include <set>
 
 #include "VulkanDebug.h"
@@ -10,7 +11,7 @@
 namespace LightVulkan {
 	class VulkanLogicalDevice {
 	public:
-		void setUp(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const std::vector<const char*> deviceExtensions, VkQueue& graphicsQueue, VkQueue& presentQueue) {
+		void setUp(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const std::vector<const char*> deviceExtensions) {
 			QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
 
 			std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -58,8 +59,21 @@ namespace LightVulkan {
 		VkDevice get() {
 			return device;
 		}
-
+        VkCommandPool& getCommandPool() {
+            return commandPool;
+        }
+        VkQueue& getGraphicsQueue() {
+            return graphicsQueue;
+        }
+        VkQueue& getPresentQueue() {
+            return presentQueue;
+        }
+        
 	private:
 		VkDevice device;
+
+        VkQueue graphicsQueue;
+        VkQueue presentQueue;
+        VkCommandPool commandPool = VK_NULL_HANDLE;
 	};
 }

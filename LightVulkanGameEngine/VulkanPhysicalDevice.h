@@ -6,84 +6,99 @@
 #include "VulkanInstance.h"
 #include "VulkanSurfaceKHR.h"
 #include "VulkanQueueFamily.h"
-#include "VulkanSwapChain.h"
+#include "VulkanUtils.h"
 
 namespace LightVulkan {
-	class VulkanPhysicalDevice {
-	public:
-		void pick(VulkanInstance& instance, VkSampleCountFlagBits& msaaSamples, VulkanSurfaceKHR surface, const std::vector<const char*> deviceExtensions) {
-			uint32_t deviceCount = 0;
-			vkEnumeratePhysicalDevices(instance.get(), &deviceCount, nullptr);
+    struct SwapChainSupportDetails {
+        VkSurfaceCapabilitiesKHR capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> presentModes;
+    };
 
-			if (deviceCount == 0) {
-				throw std::runtime_error("failed to find GPUs with Vulkan support!");
-			}
+    static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
+        SwapChainSupportDetails details;
 
-			std::vector<VkPhysicalDevice> devices(deviceCount);
-			vkEnumeratePhysicalDevices(instance.get(), &deviceCount, devices.data());
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
-			for (const auto& device : devices) {
-				if (isDeviceSuitable(device, surface.get(), deviceExtensions)) {
-					physicalDevice = device;
-					msaaSamples = getMaxUsableSampleCount();
-					break;
-				}
-			}
+        uint32_t formatCount;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
-			if (physicalDevice == VK_NULL_HANDLE) {
-				throw std::runtime_error("failed to find a suitable GPU!");
-			}
-		}
-		VkPhysicalDevice& get() {
-			return physicalDevice;
-		}
-		bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface, const std::vector<const char*> deviceExtensions) {
-			QueueFamilyIndices indices = findQueueFamilies(device, surface);
+        if (formatCount != 0) {
+            details.formats.resize(formatCount);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+        }
 
-			bool extensionsSupported = checkDeviceExtensionSupport(device, deviceExtensions);
+        uint32_t presentModeCount;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
-			bool swapChainAdequate = false;
-			if (extensionsSupported) {
-				SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);
-				swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-			}
+        if (presentModeCount != 0) {
+            details.presentModes.resize(presentModeCount);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+        }
 
-			VkPhysicalDeviceFeatures supportedFeatures;
-			vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+        return details;
+    }
 
-			return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
-		}
-		VkSampleCountFlagBits getMaxUsableSampleCount() {
-			VkPhysicalDeviceProperties physicalDeviceProperties;
-			vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    class VulkanPhysicalDevice {
+    public:
+        void pick(VulkanInstance& instance, VkSampleCountFlagBits& msaaSamples, VkSurfaceKHR surface, const std::vector<const char*> deviceExtensions) {
+            uint32_t deviceCount = 0;
+            vkEnumeratePhysicalDevices(instance.get(), &deviceCount, nullptr);
 
-			VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
-			if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
-			if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
-			if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
-			if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
-			if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
-			if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+            if (deviceCount == 0) {
+                throw std::runtime_error("failed to find GPUs with Vulkan support!");
+            }
 
-			return VK_SAMPLE_COUNT_1_BIT;
-		}
-		bool checkDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*> deviceExtensions) {
-			uint32_t extensionCount;
-			vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+            std::vector<VkPhysicalDevice> devices(deviceCount);
+            vkEnumeratePhysicalDevices(instance.get(), &deviceCount, devices.data());
 
-			std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-			vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+            for (const auto& device : devices) {
+                if (isDeviceSuitable(device, surface, deviceExtensions)) {
+                    physicalDevice = device;
+                    msaaSamples = getMaxUsableSampleCount();
+                    break;
+                }
+            }
 
-			std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+            if (physicalDevice == VK_NULL_HANDLE) {
+                throw std::runtime_error("failed to find a suitable GPU!");
+            }
+        }
+        VkPhysicalDevice& get() {
+            return physicalDevice;
+        }
+        bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface, const std::vector<const char*> deviceExtensions) {
+            QueueFamilyIndices indices = findQueueFamilies(device, surface);
 
-			for (const auto& extension : availableExtensions) {
-				requiredExtensions.erase(extension.extensionName);
-			}
+            bool extensionsSupported = Utils::checkDeviceExtensionSupport(device, deviceExtensions);
 
-			return requiredExtensions.empty();
-		}
+            bool swapChainAdequate = false;
+            if (extensionsSupported) {
+                SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);
+                swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+            }
 
-	private:
-		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-	};
+            VkPhysicalDeviceFeatures supportedFeatures;
+            vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+            return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+        }
+        VkSampleCountFlagBits getMaxUsableSampleCount() {
+            VkPhysicalDeviceProperties physicalDeviceProperties;
+            vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+
+            VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+            if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+            if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+            if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+            if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
+            if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
+            if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+
+            return VK_SAMPLE_COUNT_1_BIT;
+        }
+    private:
+        VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    };
+
 }

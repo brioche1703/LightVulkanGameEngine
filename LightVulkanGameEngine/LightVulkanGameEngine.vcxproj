@@ -24,7 +24,7 @@
     <ProjectGuid>{e3af9f3a-3ba0-40de-9c28-c22a846e49a2}</ProjectGuid>
     <RootNamespace>LightVulkanGameEngine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>MinimalVulkanEngine</ProjectName>
+    <ProjectName>LightVulkanGameEngine</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -166,13 +166,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="VulkanBuffer.h" />
+    <ClInclude Include="VulkanCommandBuffer.h" />
     <ClInclude Include="VulkanDebug.h" />
+    <ClInclude Include="VulkanDevice.h" />
+    <ClInclude Include="VulkanImage.h" />
+    <ClInclude Include="VulkanImageView.h" />
     <ClInclude Include="VulkanInstance.h" />
     <ClInclude Include="VulkanLogicalDevice.h" />
     <ClInclude Include="VulkanPhysicalDevice.h" />
     <ClInclude Include="VulkanQueueFamily.h" />
+    <ClInclude Include="VulkanResource.h" />
+    <ClInclude Include="VulkanSampler.h" />
     <ClInclude Include="VulkanSurfaceKHR.h" />
     <ClInclude Include="VulkanSwapChain.h" />
+    <ClInclude Include="VulkanTexture.h" />
+    <ClInclude Include="VulkanUtils.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

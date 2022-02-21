@@ -5,46 +5,15 @@
 
 #include <vector>
 
-#include "VulkanPhysicalDevice.h"
-#include "VulkanLogicalDevice.h"
-#include "Window.h"
+#include "VulkanDevice.h"
+#include "VulkanImageView.h"
 
 namespace LightVulkan {
 
-	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-	};
-
-	static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
-		SwapChainSupportDetails details;
-
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
-
-		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-
-		if (formatCount != 0) {
-			details.formats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
-		}
-
-		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-		if (presentModeCount != 0) {
-			details.presentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
-		}
-
-		return details;
-	}
-
 	class VulkanSwapChain {
 	public:
-		void create(VkPhysicalDevice physicalDevice, VkDevice device, VulkanSurfaceKHR surface, Window window) {
-			SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface.get());
+		void create(VulkanDevice* device, Window window) {
+            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device->getPhysicalDevice(), device->getSurface());
 
 			VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 			VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -57,7 +26,7 @@ namespace LightVulkan {
 
 			VkSwapchainCreateInfoKHR createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-			createInfo.surface = surface.get();
+            createInfo.surface = device->getSurface();
 
 			createInfo.minImageCount = imageCount;
 			createInfo.imageFormat = surfaceFormat.format;
@@ -66,7 +35,7 @@ namespace LightVulkan {
 			createInfo.imageArrayLayers = 1;
 			createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-			QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface.get());
+            QueueFamilyIndices indices = findQueueFamilies(device->getPhysicalDevice(), device->getSurface());
 			uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 			if (indices.graphicsFamily != indices.presentFamily) {
@@ -83,13 +52,13 @@ namespace LightVulkan {
 			createInfo.presentMode = presentMode;
 			createInfo.clipped = VK_TRUE;
 
-			if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+			if (vkCreateSwapchainKHR(device->getLogicalDevice(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create swap chain!");
 			}
 
-			vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+			vkGetSwapchainImagesKHR(device->getLogicalDevice(), swapChain, &imageCount, nullptr);
 			images.resize(imageCount);
-			vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images.data());
+			vkGetSwapchainImagesKHR(device->getLogicalDevice(), swapChain, &imageCount, images.data());
 
 			imageFormat = surfaceFormat.format;
 			extent = extentIn;
@@ -106,11 +75,17 @@ namespace LightVulkan {
 		VkExtent2D getExtent() {
 			return extent;
 		}
-		std::vector<VkImageView>& getImageViews() {
+		std::vector<VulkanImageView>& getImageViews() {
 			return imageViews;
 		}
 		std::vector<VkFramebuffer>& getFramebuffers() {
 			return framebuffers;
+		}
+		void createImageViews(VkDevice device) {
+			imageViews.resize(images.size());
+			for (uint32_t i = 0; i < images.size(); i++) {
+				imageViews[i].create(device, images[i], imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+			}
 		}
 
 	private:
@@ -151,12 +126,13 @@ namespace LightVulkan {
 				return actualExtent;
 			}
 		}
+
 	private:
 		VkSwapchainKHR swapChain;
 		std::vector<VkImage> images;
 		VkFormat imageFormat;
 		VkExtent2D extent;
-		std::vector<VkImageView> imageViews;
+		std::vector<VulkanImageView> imageViews;
 		std::vector<VkFramebuffer> framebuffers;
 	};
 }
