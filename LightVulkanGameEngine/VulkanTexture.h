@@ -14,7 +14,7 @@
 namespace LightVulkan {
     class VulkanTexture {
     public:
-        void create(VulkanDevice* device, const std::string& path, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
+        void create(VulkanDevice& device, const std::string& path, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
             int texWidth, texHeight, texChannels;
             stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
             VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -30,9 +30,9 @@ namespace LightVulkan {
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
             void* data;
-            vkMapMemory(device->getLogicalDevice(), stagingBuffer.getMemory(), 0, imageSize, 0, &data);
+            vkMapMemory(device.getLogicalDevice(), stagingBuffer.getMemory(), 0, imageSize, 0, &data);
             memcpy(data, pixels, static_cast<size_t>(imageSize));
-            vkUnmapMemory(device->getLogicalDevice(), stagingBuffer.getMemory());
+            vkUnmapMemory(device.getLogicalDevice(), stagingBuffer.getMemory());
 
             stbi_image_free(pixels);
 
@@ -44,26 +44,26 @@ namespace LightVulkan {
                 memory);
 
             transitionImageLayout(device, image.get(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
-            image.copyBufferToImage(stagingBuffer.getBuffer(), static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+            image.copyBufferToImage(device, stagingBuffer.getBuffer(), static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
             //copyBufferToImage(stagingBuffer.getBuffer(), image.get(), static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
             //transitioned to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL while generating mipmaps
 
-            vkDestroyBuffer(device->getLogicalDevice(), stagingBuffer.getBuffer(), nullptr);
-            vkFreeMemory(device->getLogicalDevice(), stagingBuffer.getMemory(), nullptr);
+            vkDestroyBuffer(device.getLogicalDevice(), stagingBuffer.getBuffer(), nullptr);
+            vkFreeMemory(device.getLogicalDevice(), stagingBuffer.getMemory(), nullptr);
 
             generateMipmaps(device, image.get(), VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
 
-            imageView.create(device->getLogicalDevice(), image.get(), format, aspectFlags, mipLevels);
+            imageView.create(device.getLogicalDevice(), image.get(), format, aspectFlags, mipLevels);
         }
-        void destroy(VulkanDevice* device) {
-            vkDestroyImageView(device->getLogicalDevice(), imageView.get(), nullptr);
-            vkDestroyImage(device->getLogicalDevice(), image.get(), nullptr);
-            vkFreeMemory(device->getLogicalDevice(), memory, nullptr);
+        void destroy(VulkanDevice& device) {
+            vkDestroyImageView(device.getLogicalDevice(), imageView.get(), nullptr);
+            vkDestroyImage(device.getLogicalDevice(), image.get(), nullptr);
+            vkFreeMemory(device.getLogicalDevice(), memory, nullptr);
         }
-        void generateMipmaps(VulkanDevice* device, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+        void generateMipmaps(VulkanDevice& device, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
             // Check if image format supports linear blitting
             VkFormatProperties formatProperties;
-            vkGetPhysicalDeviceFormatProperties(device->getPhysicalDevice(), imageFormat, &formatProperties);
+            vkGetPhysicalDeviceFormatProperties(device.getPhysicalDevice(), imageFormat, &formatProperties);
 
             if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
                 throw std::runtime_error("texture image format does not support linear blitting!");
@@ -150,7 +150,7 @@ namespace LightVulkan {
             //endSingleTimeCommands();
             commandBuffer.endSingleTimeCommands();
         }
-        void transitionImageLayout(VulkanDevice* device, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
+        void transitionImageLayout(VulkanDevice& device, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
             VulkanCommandBuffer commandBuffer; 
             commandBuffer.create(device, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
             commandBuffer.beginSingleTimeCommands();

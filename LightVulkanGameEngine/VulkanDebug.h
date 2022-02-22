@@ -67,6 +67,11 @@ namespace LightVulkan {
 				throw std::runtime_error("failed to set up debug messenger!");
 			}
 		}
+        void destroy(VkInstance instance) {
+            if (enableValidationLayers) {
+                DestroyDebugUtilsMessengerEXT(instance, nullptr);
+            }
+        }           
 		VkDebugUtilsMessengerEXT& getDebugMessenger() {
 			return debugMessenger;
 		};

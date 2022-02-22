@@ -8,9 +8,9 @@
 namespace LightVulkan {
     class VulkanCommandBuffer {
     public:
-        void create(VulkanDevice* deviceIn, VkCommandBufferLevel level) 
+        void create(VulkanDevice& deviceIn, VkCommandBufferLevel level) 
         {
-            device = deviceIn;
+            device = &deviceIn;
             VkCommandBufferAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             allocInfo.level = level;
@@ -19,8 +19,8 @@ namespace LightVulkan {
 
             vkAllocateCommandBuffers(device->getLogicalDevice(), &allocInfo, &commandBuffer);
         }
-        void createSingleTimeCommandBuffer(VulkanDevice* deviceIn) {
-            device = deviceIn;
+        void createSingleTimeCommandBuffer(VulkanDevice& deviceIn) {
+            device = &deviceIn;
             VkCommandBufferAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -58,7 +58,6 @@ namespace LightVulkan {
 
     private:
         VkCommandBuffer commandBuffer;
-
         VulkanDevice* device;
     };
 }

@@ -12,8 +12,7 @@
 namespace LightVulkan {
 	class VulkanImage {
 	public:
-		void createImage(VulkanDevice* deviceIn, uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkDeviceMemory& imageMemory) {
-            device = deviceIn;
+		void createImage(VulkanDevice& device, uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkDeviceMemory& imageMemory) {
 			VkImageCreateInfo imageInfo{};
 			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 			imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -29,23 +28,23 @@ namespace LightVulkan {
 			imageInfo.samples = numSamples;
 			imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-			if (vkCreateImage(device->getLogicalDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
+			if (vkCreateImage(device.getLogicalDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create image!");
 			}
 
 			VkMemoryRequirements memRequirements;
-			vkGetImageMemoryRequirements(device->getLogicalDevice(), image, &memRequirements);
+			vkGetImageMemoryRequirements(device.getLogicalDevice(), image, &memRequirements);
 
 			VkMemoryAllocateInfo allocInfo{};
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			allocInfo.allocationSize = memRequirements.size;
-			allocInfo.memoryTypeIndex = Utils::findMemoryType(device->getPhysicalDevice(), memRequirements.memoryTypeBits, properties);
+			allocInfo.memoryTypeIndex = Utils::findMemoryType(device.getPhysicalDevice(), memRequirements.memoryTypeBits, properties);
 
-			if (vkAllocateMemory(device->getLogicalDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+			if (vkAllocateMemory(device.getLogicalDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
 				throw std::runtime_error("failed to allocate image memory!");
 			}
 
-			vkBindImageMemory(device->getLogicalDevice(), image, imageMemory, 0);
+			vkBindImageMemory(device.getLogicalDevice(), image, imageMemory, 0);
 		}
         void destroy(VkDevice device) {
             vkDestroyImage(device, image, nullptr);
@@ -53,7 +52,7 @@ namespace LightVulkan {
 		VkImage get() {
 			return image;
 		}
-        void copyBufferToImage(VkBuffer buffer, uint32_t width, uint32_t height) {
+        void copyBufferToImage(VulkanDevice& device, VkBuffer buffer, uint32_t width, uint32_t height) {
             VulkanCommandBuffer commandBuffer;
             commandBuffer.createSingleTimeCommandBuffer(device);
             commandBuffer.beginSingleTimeCommands();
@@ -79,7 +78,5 @@ namespace LightVulkan {
         }
     private:
         VkImage image;
-
-        VulkanDevice* device;
     };
 }

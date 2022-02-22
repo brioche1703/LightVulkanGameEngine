@@ -7,13 +7,21 @@
 #include "VulkanLogicalDevice.h"
 #include "Window.h"
 
+const std::vector<const char*> deviceExtensions = {
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
 namespace LightVulkan {
     class VulkanDevice {
     public:
-        void setUp(VulkanInstance& instance, Window& window, VkSampleCountFlagBits& msaaSamples, const std::vector<const char*> deviceExtensions) {
+        void setUp(VulkanInstance& instance, Window& window, VkSampleCountFlagBits& msaaSamples) {
             surface.setUp(instance, window);
             physicalDevice.pick(instance, msaaSamples, surface.get(), deviceExtensions);
             device.setUp(physicalDevice.get(), surface.get(), deviceExtensions);
+        }
+        void destroy(VkInstance& instance) {
+            vkDestroyDevice(device.get(), nullptr);
+            surface.destroy(instance);
         }
         VkPhysicalDevice getPhysicalDevice() {
             return physicalDevice.get();

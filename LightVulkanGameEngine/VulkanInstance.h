@@ -48,6 +48,9 @@ namespace LightVulkan {
                 throw std::runtime_error("failed to create instance!");
             }
         }
+        void destroy() {
+            vkDestroyInstance(instance, nullptr);
+        }
         VkInstance& get() {
             return instance;
         }

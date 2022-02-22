@@ -16,6 +16,9 @@ namespace LightVulkan {
 				throw std::runtime_error("failed to create window surface!");
 			}
 		}
+        void destroy(VkInstance& instance) {
+            vkDestroySurfaceKHR(instance, surface, nullptr);
+        }
 		VkSurfaceKHR get() {
 			return surface;
 		}

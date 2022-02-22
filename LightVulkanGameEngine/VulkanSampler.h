@@ -8,9 +8,9 @@
 namespace LightVulkan {
     class VulkanSampler {
     public:
-        void create(VulkanDevice* device, uint32_t mipLevels) {
+        void create(VulkanDevice& device, uint32_t mipLevels) {
             VkPhysicalDeviceProperties properties{};
-            vkGetPhysicalDeviceProperties(device->getPhysicalDevice(), &properties);
+            vkGetPhysicalDeviceProperties(device.getPhysicalDevice(), &properties);
 
             VkSamplerCreateInfo samplerInfo{};
             samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -30,12 +30,12 @@ namespace LightVulkan {
             samplerInfo.maxLod = static_cast<float>(mipLevels);
             samplerInfo.mipLodBias = 0.0f;
 
-            if (vkCreateSampler(device->getLogicalDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
+            if (vkCreateSampler(device.getLogicalDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create texture sampler!");
             }
         }
-        void destroy(VulkanDevice* device) {
-            vkDestroySampler(device->getLogicalDevice(), sampler, nullptr);
+        void destroy(VulkanDevice& device) {
+            vkDestroySampler(device.getLogicalDevice(), sampler, nullptr);
         }
         VkSampler get() {
             return sampler;

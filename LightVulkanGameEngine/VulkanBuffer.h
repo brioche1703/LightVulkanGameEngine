@@ -11,30 +11,30 @@
 namespace LightVulkan {
     class VulkanBuffer {
     public:
-        void create(VulkanDevice* device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
+        void create(VulkanDevice& device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
             VkBufferCreateInfo bufferInfo{};
             bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
             bufferInfo.size = size;
             bufferInfo.usage = usage;
             bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-            if (vkCreateBuffer(device->getLogicalDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+            if (vkCreateBuffer(device.getLogicalDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create buffer!");
             }
 
             VkMemoryRequirements memRequirements;
-            vkGetBufferMemoryRequirements(device->getLogicalDevice(), buffer, &memRequirements);
+            vkGetBufferMemoryRequirements(device.getLogicalDevice(), buffer, &memRequirements);
 
             VkMemoryAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             allocInfo.allocationSize = memRequirements.size;
-            allocInfo.memoryTypeIndex = Utils::findMemoryType(device->getPhysicalDevice(), memRequirements.memoryTypeBits, properties);
+            allocInfo.memoryTypeIndex = Utils::findMemoryType(device.getPhysicalDevice(), memRequirements.memoryTypeBits, properties);
 
-            if (vkAllocateMemory(device->getLogicalDevice(), &allocInfo, nullptr, &memory) != VK_SUCCESS) {
+            if (vkAllocateMemory(device.getLogicalDevice(), &allocInfo, nullptr, &memory) != VK_SUCCESS) {
                 throw std::runtime_error("failed to allocate buffer memory!");
             }
 
-            vkBindBufferMemory(device->getLogicalDevice(), buffer, memory, 0);
+            vkBindBufferMemory(device.getLogicalDevice(), buffer, memory, 0);
         }
         void destroy(VkDevice device) {
             vkDestroyBuffer(device, buffer, nullptr);
@@ -46,7 +46,7 @@ namespace LightVulkan {
         VkDeviceMemory getMemory() {
             return memory;
         }
-        static void copyBuffer(VulkanDevice* device, VulkanBuffer srcBuffer, VulkanBuffer dstBuffer, VkDeviceSize size) {
+        static void copyBuffer(VulkanDevice& device, VulkanBuffer srcBuffer, VulkanBuffer dstBuffer, VkDeviceSize size) {
             VulkanCommandBuffer commandBuffer;
             commandBuffer.createSingleTimeCommandBuffer(device);
             commandBuffer.beginSingleTimeCommands();

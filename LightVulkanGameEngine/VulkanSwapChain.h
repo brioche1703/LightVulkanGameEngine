@@ -12,8 +12,8 @@ namespace LightVulkan {
 
 	class VulkanSwapChain {
 	public:
-		void create(VulkanDevice* device, Window window) {
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device->getPhysicalDevice(), device->getSurface());
+		void create(VulkanDevice& device, Window window) {
+            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device.getPhysicalDevice(), device.getSurface());
 
 			VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 			VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -26,7 +26,7 @@ namespace LightVulkan {
 
 			VkSwapchainCreateInfoKHR createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-            createInfo.surface = device->getSurface();
+            createInfo.surface = device.getSurface();
 
 			createInfo.minImageCount = imageCount;
 			createInfo.imageFormat = surfaceFormat.format;
@@ -35,7 +35,7 @@ namespace LightVulkan {
 			createInfo.imageArrayLayers = 1;
 			createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-            QueueFamilyIndices indices = findQueueFamilies(device->getPhysicalDevice(), device->getSurface());
+            QueueFamilyIndices indices = findQueueFamilies(device.getPhysicalDevice(), device.getSurface());
 			uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 			if (indices.graphicsFamily != indices.presentFamily) {
@@ -52,17 +52,20 @@ namespace LightVulkan {
 			createInfo.presentMode = presentMode;
 			createInfo.clipped = VK_TRUE;
 
-			if (vkCreateSwapchainKHR(device->getLogicalDevice(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+			if (vkCreateSwapchainKHR(device.getLogicalDevice(), &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
 				throw std::runtime_error("failed to create swap chain!");
 			}
 
-			vkGetSwapchainImagesKHR(device->getLogicalDevice(), swapChain, &imageCount, nullptr);
+			vkGetSwapchainImagesKHR(device.getLogicalDevice(), swapChain, &imageCount, nullptr);
 			images.resize(imageCount);
-			vkGetSwapchainImagesKHR(device->getLogicalDevice(), swapChain, &imageCount, images.data());
+			vkGetSwapchainImagesKHR(device.getLogicalDevice(), swapChain, &imageCount, images.data());
 
 			imageFormat = surfaceFormat.format;
 			extent = extentIn;
 		}
+        void destroy(VulkanDevice& device) {
+            vkDestroySwapchainKHR(device.getLogicalDevice(), swapChain, nullptr);
+        }
 		VkSwapchainKHR get() {
 			return swapChain;
 		}

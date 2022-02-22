@@ -17,6 +17,9 @@ namespace LightVulkan {
             glfwSetWindowUserPointer(window, this);
             glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
         }
+        void destroy() {
+            glfwDestroyWindow(window);
+        }
         GLFWwindow* get() {
             return window;
         }
