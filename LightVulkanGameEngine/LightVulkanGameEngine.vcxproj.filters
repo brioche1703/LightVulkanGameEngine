@@ -19,6 +19,9 @@
     <Filter Include="Header Files\Utils">
       <UniqueIdentifier>{5f3a22bb-bb8e-4b47-bd9d-5508ca65905c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Applications">
+      <UniqueIdentifier>{ea9b8e64-7fed-4c3f-a66d-809d5f6a51f0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -36,6 +39,12 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="shaders\shader.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\helloTriangleShader.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\helloTriangleShader.vert">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
@@ -102,6 +111,15 @@
     </ClInclude>
     <ClInclude Include="VulkanSyncObjects.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanApplication.h">
+      <Filter>Header Files\Applications</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleModelApplication.h">
+      <Filter>Header Files\Applications</Filter>
+    </ClInclude>
+    <ClInclude Include="HelloTriangleApplication.h">
+      <Filter>Header Files\Applications</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

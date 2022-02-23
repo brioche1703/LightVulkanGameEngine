@@ -161,12 +161,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\compile.bat" />
+    <None Include="shaders\helloTriangleShader.frag" />
+    <None Include="shaders\helloTriangleShader.vert" />
     <None Include="shaders\shader.frag" />
     <None Include="shaders\shader.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="HelloTriangleApplication.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="SimpleModelApplication.h" />
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="VulkanApplication.h" />
     <ClInclude Include="VulkanBuffer.h" />
     <ClInclude Include="VulkanCommandBuffer.h" />
     <ClInclude Include="VulkanDebug.h" />

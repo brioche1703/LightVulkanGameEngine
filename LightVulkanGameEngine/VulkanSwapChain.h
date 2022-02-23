@@ -63,8 +63,18 @@ namespace LightVulkan {
 			imageFormat = surfaceFormat.format;
 			extent = extentIn;
 		}
-        void destroy(VulkanDevice& device) {
-            vkDestroySwapchainKHR(device.getLogicalDevice(), swapChain, nullptr);
+        void destroy(VkDevice device) {
+            vkDestroySwapchainKHR(device, swapChain, nullptr);
+        }
+        void destroyFrameBuffers(VkDevice device) {
+            for (auto framebuffer : framebuffers) {
+                vkDestroyFramebuffer(device, framebuffer, nullptr);
+            }
+        }
+        void destroyImageViews(VkDevice device) {
+            for (auto imageView : imageViews) {
+                imageView.destroy(device);
+            }
         }
 		VkSwapchainKHR get() {
 			return swapChain;
