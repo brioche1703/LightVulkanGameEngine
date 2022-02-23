@@ -2,8 +2,8 @@
 #include "HelloTriangleApplication.h"
 
 int main() {
-    //SimpleModelApplication app;
-    HelloTriangleApplication app;
+    SimpleModelApplication app;
+    //HelloTriangleApplication app;
 
     try {
         app.run();

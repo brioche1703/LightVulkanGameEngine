@@ -15,92 +15,28 @@ public:
     }
 
 private:
-
     uint32_t mipLevels;
     VulkanTexture texture;
     VulkanSampler textureSampler;
 
     Model model;
 
+private:
     void initVulkan() override {
-        instance.setUp(debugMessenger);
-        debugMessenger.setUp(instance.get());
-        device.setUp(instance, window, msaaSamples);
-        swapChain.create(device, window);
-        swapChain.createImageViews(device.getLogicalDevice());
-        createRenderPass();
-        createDescriptorSetLayout();
-        createGraphicsPipeline();
-        createCommandPool();
-        createColorResources();
-        createDepthResources();
-        createFramebuffers();
+        VulkanApplication::initVulkan();
+
         createTextureImage();
         createTextureSampler();
         loadModel();
-        createUniformBuffers();
-        createDescriptorPool();
+
         createDescriptorSets();
         createCommandBuffers();
-        syncObjects.create(device, swapChain, MAX_FRAMES_IN_FLIGHT);
-    }
-    void cleanupSwapChain() override {
-        depthResource.destroy(device.getLogicalDevice());
-        colorResource.destroy(device.getLogicalDevice());
-
-        swapChain.destroyFrameBuffers(device.getLogicalDevice());
-
-        vkFreeCommandBuffers(device.getLogicalDevice(), device.getCommandPool(), static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
-
-        vkDestroyPipeline(device.getLogicalDevice(), graphicsPipeline, nullptr);
-        vkDestroyPipelineLayout(device.getLogicalDevice(), pipelineLayout, nullptr);
-        vkDestroyRenderPass(device.getLogicalDevice(), renderPass, nullptr);
-
-        swapChain.destroyImageViews(device.getLogicalDevice());
-        swapChain.destroy(device.getLogicalDevice());
-
-        for (size_t i = 0; i < swapChain.getImages().size(); i++) {
-            uniformBuffers[i].destroy(device.getLogicalDevice());
-        }
-        vkDestroyDescriptorPool(device.getLogicalDevice(), descriptorPool, nullptr);
     }
     void cleanup() override {
-        cleanupSwapChain();
         textureSampler.destroy(device);
         texture.destroy(device);
-        vkDestroyDescriptorSetLayout(device.getLogicalDevice(), descriptorSetLayout, nullptr);
         model.destroyBuffers(device);
-        syncObjects.destroy(device, MAX_FRAMES_IN_FLIGHT);
-        vkDestroyCommandPool(device.getLogicalDevice(), device.getCommandPool(), nullptr);
-        device.destroy(instance.get());
-        debugMessenger.destroy(instance.get());
-        instance.destroy();
-        window.destroy();
-        glfwTerminate();
-    }
-    void recreateSwapChain() override {
-        int width = 0, height = 0;
-        glfwGetFramebufferSize(window.get(), &width, &height);
-        while (width == 0 || height == 0) {
-            glfwGetFramebufferSize(window.get(), &width, &height);
-            glfwWaitEvents();
-        }
-
-        vkDeviceWaitIdle(device.getLogicalDevice());
-
-        cleanupSwapChain();
-        swapChain.create(device, window);
-        swapChain.createImageViews(device.getLogicalDevice());
-        createRenderPass();
-        createGraphicsPipeline();
-        createColorResources();
-        createDepthResources();
-        createFramebuffers();
-        createUniformBuffers();
-        createDescriptorPool();
-        createDescriptorSets();
-        createCommandBuffers();
-        syncObjects.resize(swapChain);
+        VulkanApplication::cleanup();
     }
     void createGraphicsPipeline() override {
         VulkanShaderModule vertShaderModule(device, "shaders/vert.spv");
@@ -298,8 +234,7 @@ private:
         memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(device.getLogicalDevice(), uniformBuffers[currentImage].getMemory());
     }
-
-    void createDescriptorSetLayout() {
+    void createDescriptorSetLayout() override {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;
         uboLayoutBinding.descriptorCount = 1;
@@ -324,16 +259,7 @@ private:
             throw std::runtime_error("failed to create descriptor set layout!");
         }
     }
-    void createTextureImage() {
-        texture.create(device, TEXTURE_PATH, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
-    }
-    void createTextureSampler() {
-        textureSampler.create(device, mipLevels);
-    }
-    void loadModel() {
-        model.load(device, MODEL_PATH);
-    }
-    void createDescriptorPool() {
+    void createDescriptorPool() override {
         std::array<VkDescriptorPoolSize, 2> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChain.getImages().size());
@@ -350,7 +276,7 @@ private:
             throw std::runtime_error("failed to create descriptor pool!");
         }
     }
-    void createDescriptorSets() {
+    void createDescriptorSets() override {
         std::vector<VkDescriptorSetLayout> layouts(swapChain.getImages().size(), descriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -394,5 +320,15 @@ private:
 
             vkUpdateDescriptorSets(device.getLogicalDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
+    }
+
+    void createTextureImage() {
+        texture.create(device, TEXTURE_PATH, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
+    }
+    void createTextureSampler() {
+        textureSampler.create(device, mipLevels);
+    }
+    void loadModel() {
+        model.load(device, MODEL_PATH);
     }
 };
