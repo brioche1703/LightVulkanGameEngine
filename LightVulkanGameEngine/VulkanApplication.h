@@ -42,12 +42,6 @@ const uint32_t HEIGHT = 600;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-struct UniformBufferObject {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-};
-
 namespace LightVulkan {
 
     class VulkanApplication {
@@ -75,12 +69,7 @@ namespace LightVulkan {
         VulkanResource colorResource;
         VulkanDepthResource depthResource;
 
-        std::vector<VulkanBuffer> uniformBuffers;
         std::vector<VkCommandBuffer> commandBuffers;
-
-        VkDescriptorSetLayout descriptorSetLayout;
-        VkDescriptorPool descriptorPool;
-        std::vector<VkDescriptorSet> descriptorSets;
 
         VulkanSyncObjects syncObjects;
         size_t currentFrame = 0;
@@ -125,15 +114,9 @@ namespace LightVulkan {
 
             swapChain.destroyImageViews(device.getLogicalDevice());
             swapChain.destroy(device.getLogicalDevice());
-
-            for (size_t i = 0; i < swapChain.getImages().size(); i++) {
-                uniformBuffers[i].destroy(device.getLogicalDevice());
-            }
-            vkDestroyDescriptorPool(device.getLogicalDevice(), descriptorPool, nullptr);
         }
         virtual void cleanup() {
             cleanupSwapChain();
-            vkDestroyDescriptorSetLayout(device.getLogicalDevice(), descriptorSetLayout, nullptr);
             syncObjects.destroy(device, MAX_FRAMES_IN_FLIGHT);
             vkDestroyCommandPool(device.getLogicalDevice(), device.getCommandPool(), nullptr);
             device.destroy(instance.get());
@@ -278,24 +261,18 @@ namespace LightVulkan {
                 swapChain.getExtent().width, swapChain.getExtent().height,
                 msaaSamples);
         }
-        virtual void createUniformBuffers() {
-            VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-            uniformBuffers.resize(swapChain.getImages().size());
+        virtual void createUniformBuffers() {};
+        virtual void updateUniformBuffers(uint32_t currentImage) {};
+        virtual void cleanUniformBuffers() {
 
-            for (size_t i = 0; i < swapChain.getImages().size(); i++) {
-                uniformBuffers[i].create(device,
-                    bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-            }
         }
+        virtual void createDescriptorSetLayout() {};
+        virtual void createDescriptorPool() {};
+        virtual void createDescriptorSets() {};
 
         virtual void createGraphicsPipeline() = 0;
         virtual void createCommandBuffers() = 0;
-        virtual void updateUniformBuffers(uint32_t currentImage) = 0;
-        virtual void createDescriptorSetLayout() = 0;
-        virtual void createDescriptorPool() = 0;
-        virtual void createDescriptorSets() = 0;
 
         virtual void drawFrame() {
             vkWaitForFences(device.getLogicalDevice(), 1, &syncObjects.getInFlightFences()[currentFrame], VK_TRUE, UINT64_MAX);

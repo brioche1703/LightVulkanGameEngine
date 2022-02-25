@@ -15,11 +15,11 @@ public:
     }
 
 private:
-    uint32_t mipLevels;
-    VulkanTexture texture;
-    VulkanSampler textureSampler;
-
-    Model model;
+    struct UniformBufferObject {
+        alignas(16) glm::mat4 model;
+        alignas(16) glm::mat4 view;
+        alignas(16) glm::mat4 proj;
+    };
 
 private:
     void initVulkan() override {
@@ -32,7 +32,16 @@ private:
         createDescriptorSets();
         createCommandBuffers();
     }
+    void cleanupSwapChain() override {
+        VulkanApplication::cleanupSwapChain();
+
+        for (size_t i = 0; i < swapChain.getImages().size(); i++) {
+            uniformBuffers[i].destroy(device.getLogicalDevice());
+        }
+        vkDestroyDescriptorPool(device.getLogicalDevice(), descriptorPool, nullptr);
+    }
     void cleanup() override {
+        vkDestroyDescriptorSetLayout(device.getLogicalDevice(), descriptorSetLayout, nullptr);
         textureSampler.destroy(device);
         texture.destroy(device);
         model.destroyBuffers(device);
@@ -234,6 +243,17 @@ private:
         memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(device.getLogicalDevice(), uniformBuffers[currentImage].getMemory());
     }
+    void createUniformBuffers() override {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        uniformBuffers.resize(swapChain.getImages().size());
+
+        for (size_t i = 0; i < swapChain.getImages().size(); i++) {
+            uniformBuffers[i].create(device,
+                bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        }
+    }
     void createDescriptorSetLayout() override {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;
@@ -321,7 +341,6 @@ private:
             vkUpdateDescriptorSets(device.getLogicalDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
     }
-
     void createTextureImage() {
         texture.create(device, TEXTURE_PATH, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
     }
@@ -331,4 +350,17 @@ private:
     void loadModel() {
         model.load(device, MODEL_PATH);
     }
+
+private:
+    std::vector<VulkanBuffer> uniformBuffers;
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSet> descriptorSets;
+
+    uint32_t mipLevels;
+    VulkanTexture texture;
+    VulkanSampler textureSampler;
+
+    Model model;
 };
